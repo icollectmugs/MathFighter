@@ -39,6 +39,13 @@ Phaser.Scene
         
         this.playerAttack = false
         this.enemyAttack = false
+
+        this.score = 0
+        this.scoreLabel = undefined
+
+        this.timer = 10
+        this.timerLabel = undefined
+        this.countdown = undefined
     }
 
     preload(){
@@ -134,7 +141,15 @@ Phaser.Scene
             this
         )
 
-        
+        this.scoreLabel = this.add.text(10, 10, 'Score :',{
+            // @ts-ignore
+            fill: 'white', backgroundColor: 'black'
+        }).setDepth(1)
+
+        this.timeLabel = this.add.text(380, 10, 'Time :',{
+            // @ts-ignore
+            fill: 'white', backgroundColor:'black'
+        }).setDepth(1)
     }
 
     update(){
@@ -168,6 +183,18 @@ Phaser.Scene
                 )
             })
             this.enemyAttack=true
+        }
+        
+        if (this.correctAnswer===true && !this.playerAttack) {
+            //some codea
+            this.playerAttack = true
+            this.score+= 10
+        }
+
+        this.scoreLabel.setText('Score :' +this.score)
+
+        if(this.startGame = true) {
+            this.timerLabel.setText('Timer :'+this.timer)
         }
     }
 
@@ -229,7 +256,7 @@ Phaser.Scene
             frameRate: 10,
         })
     }
-    // 2. GameStartMethod
+    // 2. GameStart Method
     gameStart(){
         this.startGame = true
         this.player.anims.play('player-standby', true)
@@ -238,20 +265,29 @@ Phaser.Scene
             this.gameHalfWidth,
             200,
             '0',
+            // @ts-ignore
             { fontSize: '32px', fill: '#000'}
         )
         this.questionText = this.add.text(
             this.gameHalfWidth,
             100,
             '0',
+            // @ts-ignore
             { fontSize: '32px', fill: '#000'}
         )
 
         this.input.on('gameobjectdown', this.addNumber, this)
 
         this.generateQuestion()
+
+        this.countdown = this.time.addEvent({
+            delay:1000,
+            callback:this.gameOver,
+            callbackScope: this,
+            loop: true
+        })
     }
-    // 3. CreateButtonsMethod
+    // 3. CreateButtons Method
     createButtons(){
         const startPosY = this.scale.height - 246
         const widthDiff = 131
@@ -461,5 +497,14 @@ Phaser.Scene
             this.correctAnswer = undefined 
             this.generateQuestion()
         })
+    }
+
+    //10. GameOver Method
+    gameOver() {
+        this.timer--
+        if(this.timer <0) {
+            this.scene.start('over-scene',
+                {score: this.score})
+        }
     }
 }
