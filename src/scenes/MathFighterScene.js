@@ -34,6 +34,11 @@ Phaser.Scene
         this.number = 0
 
         this.question  = []
+
+        this.correctAnswer = undefined
+        
+        this.playerAttack = false
+        this.enemyAttack = false
     }
 
     preload(){
@@ -111,12 +116,62 @@ Phaser.Scene
             this.createButtons()
         }, this)
 
+        // Overlaping Player & Slash
+        this.physics.add.overlap(
+            this.slash,
+            this.player,
+            this.spriteHit,
+            null,
+            this
+        )
+
+        // Overlaping Enemy & Slash
+        this.physics.add.overlap(
+            this.slash,
+            this.enemy,
+            this.spriteHit,
+            null,
+            this
+        )
+
         
     }
 
     update(){
+        if(this.correctAnswer === true && !this.playerAttack) {
+            this.player.anims.play('player attack', true)
+            this.time.delayedCall(500, () => {
+                this.createSlash(
+                    this.player.x+60,
+                    this.player.y,
+                    4,
+                    600
+                )
+            })
+            this.playerAttack = true
+        }
         
+        if(this.correctAnswer === undefined) {
+            this.player.anims.play('player-standby', true)
+            this.enemy.anims.play('enemy-standby', true)
+        }
+    
+        if(this.correctAnswer === false && !this.enemyAttack) {
+            this.enemy.anims.play('enemy-attack', true)
+            this.time.delayedCall(500, () => {
+                this.createSlash(
+                    this.enemy.x-60,
+                    this.enemy.y,
+                    2,
+                    -600,
+                    true
+                )
+            })
+            this.enemyAttack=true
+        }
     }
+
+    
     //Extra Method
     // 1. CreateAnimationMethod
     createAnimation(){
@@ -349,8 +404,12 @@ Phaser.Scene
         }
 
         if(operator === '-'){
+            if (numberB > numberA) {
+                this.question[0] = `${numberB} - ${numberA}`
+                this.question[1] = numberB - numberA
+            }else {
             this.question[0] = `${numberA} - ${numberB}`
-            this.question[1] = numberA - numberB
+            this.question[1] = numberA - numberB}
         }
         if(operator === ':') {
             do {
@@ -364,5 +423,43 @@ Phaser.Scene
         this.questionText.setText(this.question[0])
         const textHalfWidth = this.questionText.width*0.5
         this.questionText.setX(this.gameHalfWidth - textHalfWidth)
+    }
+
+    // 7. Check Answer Method
+    checkAnswer() {
+        if (this.number == this.question[1]) {
+            this.correctAnswer = true
+        }else {
+            this.correctAnswer = false
+        }
+    }
+
+    //8. Create Slash Method
+    createSlash(x, y, frame, velocity, flip=false) {
+        this.slash.setPosition(x,y)
+        .setActive(true)
+        .setVisible(true)
+        .setFrame(frame)
+        .setFlipX(flip)
+        .setVelocityX(velocity)
+    }
+
+    //9. Sprite Hit Method
+    spriteHit(slash, sprite) {
+        slash.x = 0
+        slash.y = 0
+        slash.setActive(false)
+        slash.setVisible(false)
+        if(sprite.texture == 'player') {
+            sprite.anims.play('player-hit', true)
+        }else {
+            sprite.anims.play('enemy-hit', true)
+        }
+        this.time.delayedCall(500, () => {
+            this.playerAttack = false
+            this.enemyAttack = false
+            this.correctAnswer = undefined 
+            this.generateQuestion()
+        })
     }
 }
